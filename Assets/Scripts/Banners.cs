@@ -104,7 +104,7 @@ public class Banners : MonoBehaviour
 			}
 			
 		}
-		if (!move)
+		if (!move && bannerOn)
 		{
 			timeBanner -= Time.deltaTime;
 		}
