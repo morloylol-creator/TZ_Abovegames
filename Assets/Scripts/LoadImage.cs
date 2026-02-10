@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
@@ -25,9 +24,13 @@ public class LoadImage : MonoBehaviour
 	int row;
 	int column;
 
-	bool move;
-	bool checkMove;
-	float t;
+	public bool moveAll;
+	public bool moveOdd;
+	public bool moveEven;
+	//bool checkMove;
+	float tAll;
+	float tOdd;
+	float tEven;
 	string direction = "";
 	Vector2 posTap;
 	Vector2 posTapUp;
@@ -59,6 +62,10 @@ public class LoadImage : MonoBehaviour
 
 	public GameObject banner;
 
+	public int loadAll;
+	public int loadOdd;
+	public int loadEven;
+
 	void Start()
 	{
 		screensaver = true;
@@ -70,15 +77,19 @@ public class LoadImage : MonoBehaviour
 		numberOdd = 1;
 		numberEven = 2;
 
-		/*galleryAll.SetActive(true);
+		galleryAll.SetActive(true);
 		galleryOdd.SetActive(false);
-		galleryEven.SetActive(false);*/
+		galleryEven.SetActive(false);
 		tabBar = "all";
-		imageUrl = "http://data.ikppbb.com/test-task-unity-data/pics/";
+		imageUrl = "https://data.ikppbb.com/test-task-unity-data/pics/";
 
-		checkMove = true;
-		move = false;
-		t = 0;
+		//checkMove = true;
+		moveAll = false;
+		moveOdd = false;
+		moveEven = false;
+		tAll = 0;
+		tOdd = 0;
+		tEven = 0;
 
 		tapImage = false;
 		bgForImage.SetActive(false);
@@ -86,6 +97,10 @@ public class LoadImage : MonoBehaviour
 		StartCoroutine(CreateGalleryAll());
 		StartCoroutine(CreateGalleryOdd());
 		StartCoroutine(CreateGalleryEven());
+
+		loadAll = 0;
+		loadOdd = 0;
+		loadEven = 0;
 	}
 
 	IEnumerator DownloadImage(string MediaUrl, GameObject gallery, List<RawImage> images, string name)
@@ -116,7 +131,7 @@ public class LoadImage : MonoBehaviour
 		if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
 		{
 			Debug.Log(request.error);
-			checkMove = false;
+			//checkMove = false;
 		}
 		else
 		{
@@ -128,6 +143,19 @@ public class LoadImage : MonoBehaviour
 			images.Add(clone);
 			clone.transform.localPosition = pos;
 		}
+
+		if(gallery.name == galleryAll.name)
+		{
+			loadAll--;
+		}
+		if (gallery.name == galleryOdd.name)
+		{
+			loadOdd--;
+		}
+		if (gallery.name == galleryEven.name)
+		{
+			loadEven--;
+		}
 	}
 	IEnumerator DownloadImagePosDown(string MediaUrl, GameObject gallery, List<RawImage> images, Vector3 pos, string name)
 	{
@@ -137,7 +165,7 @@ public class LoadImage : MonoBehaviour
 		if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
 		{
 			Debug.Log(request.error);
-			checkMove = false;
+			//checkMove = false;
 		}
 		else
 		{
@@ -149,30 +177,127 @@ public class LoadImage : MonoBehaviour
 			images.Insert(int.Parse(name) - 1, clone);
 			clone.transform.localPosition = pos;
 		}
+
+		if (gallery.name == galleryAll.name)
+		{
+			loadAll--;
+		}
+		if (gallery.name == galleryOdd.name)
+		{
+			loadOdd--;
+		}
+		if (gallery.name == galleryEven.name)
+		{
+			loadEven--;
+		}
 	}
 
 	// Update is called once per frame
 	void Update()
     {
 
-		if (column != 0 && imagesAll.Count >= 4 * column && !screensaver)
+		/*if (column != 0 && imagesAll.Count >= 4 * column && !screensaver)
 		{
 			screensaverUI.SetActive(false);
 			banner.GetComponent<Banners>().bannerOn = true;
-		}
+		}*/
 		
 		CheckPremiumAll();
 		CheckPremiumOdd();
 		CheckPremiumEven();
-		if (!screensaverAnim.isPlaying)
+		if (!screensaverAnim.isPlaying && imagesAll.Count == row * column)
 		{
 			screensaver = false;
+			screensaverUI.SetActive(false);
+			banner.GetComponent<Banners>().bannerOn = true;
 		}
 		if (!screensaver)
 		{
 			SwapImages();
 
-			if (move)
+			if (moveAll)
+			{
+				tAll += Time.deltaTime;
+				if(direction == "up")
+				{
+					StartMoveUpAll(tAll);
+				}
+				else if(direction == "down")
+				{
+					StartMoveDownAll(tAll);
+				}
+			}
+			if(tAll >= 1)
+			{
+				moveAll = false;
+				tAll = 0;
+
+				if (direction == "up")
+				{
+					CorrectionGalleryImagesAllUp();
+				}
+				if (direction == "down")
+				{
+					CorrectionGalleryImagesAllDown();
+				}
+			}
+
+
+			if (moveOdd)
+			{
+				tOdd += Time.deltaTime;
+				if (direction == "up")
+				{
+					StartMoveUpOdd(tOdd);
+				}
+				else if (direction == "down")
+				{
+					StartMoveDownOdd(tOdd);
+				}
+			}
+			if (tOdd >= 1)
+			{
+				moveOdd = false;
+				tOdd = 0;
+
+				if (direction == "up")
+				{
+					CorrectionGalleryImagesOddUp();
+				}
+				if (direction == "down")
+				{
+					CorrectionGalleryImagesOddDown();
+				}
+			}
+
+			if (moveEven)
+			{
+				tEven += Time.deltaTime;
+				if (direction == "up")
+				{
+					StartMoveUpEven(tEven);
+				}
+				else if (direction == "down")
+				{
+					StartMoveDownEven(tEven);
+				}
+			}
+			if (tEven >= 1)
+			{
+				moveEven = false;
+				tEven = 0;
+
+				if (direction == "up")
+				{
+					CorrectionGalleryImagesEvenUp();
+				}
+				if (direction == "down")
+				{
+					CorrectionGalleryImagesEvenDown();
+				}
+			}
+
+			/*if (move)
 			{
 				t += Time.deltaTime;
 				if (direction == "up")
@@ -243,7 +368,7 @@ public class LoadImage : MonoBehaviour
 
 					}
 				}
-			}
+			}*/
 
 			if (tapImage)
 			{
@@ -317,11 +442,11 @@ public class LoadImage : MonoBehaviour
 	IEnumerator CreateGalleryAll()
 	{
 		row = 5;
-		if (Camera.main.pixelWidth > 580 * 3 && Camera.main.pixelWidth < 640 * 3)
+		if (Camera.main.pixelWidth > 1900 && Camera.main.pixelWidth < 2000)
 		{
 			column = 3;
 		}
-		else if (Camera.main.pixelWidth >= 640 * 3)
+		else if (Camera.main.pixelWidth >= 2000)
 		{
 			column = 4;
 		}
@@ -358,11 +483,11 @@ public class LoadImage : MonoBehaviour
 	IEnumerator CreateGalleryOdd()
 	{
 		row = 5;
-		if (Camera.main.pixelWidth > 580 * 3 && Camera.main.pixelWidth < 640 * 3)
+		if (Camera.main.pixelWidth > 1900 && Camera.main.pixelWidth < 2000)
 		{
 			column = 3;
 		}
-		else if (Camera.main.pixelWidth >= 640 * 3)
+		else if (Camera.main.pixelWidth >= 2000)
 		{
 			column = 4;
 		}
@@ -372,6 +497,7 @@ public class LoadImage : MonoBehaviour
 		}
 		int n = 1;
 		int number = 1;
+
 		while (n <= row * column)
 		{
 			yield return StartCoroutine(DownloadImage(imageUrl + number + ".jpg", galleryOdd, imagesOdd, number.ToString()));
@@ -400,11 +526,11 @@ public class LoadImage : MonoBehaviour
 	IEnumerator CreateGalleryEven()
 	{
 		row = 5;
-		if (Camera.main.pixelWidth > 580 * 3 && Camera.main.pixelWidth < 640 * 3)
+		if (Camera.main.pixelWidth > 1900 && Camera.main.pixelWidth < 2000)
 		{
 			column = 3;
 		}
-		else if (Camera.main.pixelWidth >= 640 * 3)
+		else if (Camera.main.pixelWidth >= 2000)
 		{
 			column = 4;
 		}
@@ -414,6 +540,7 @@ public class LoadImage : MonoBehaviour
 		}
 		int n = 1;
 		int number = 2;
+
 		while (n <= row * column)
 		{
 			yield return StartCoroutine(DownloadImage(imageUrl + number + ".jpg", galleryEven, imagesEven, number.ToString()));
@@ -493,7 +620,7 @@ public class LoadImage : MonoBehaviour
 
 	public void ButtonEven()
 	{
-		if(tabBar != "even")
+		if (tabBar != "even")
 		{
 			galleryAll.SetActive(false);
 			galleryOdd.SetActive(false);
@@ -551,54 +678,61 @@ public class LoadImage : MonoBehaviour
 
 	void SwapImages()
 	{
-		if (Input.GetKeyDown(KeyCode.Mouse0) && !move && Camera.main.ScreenToWorldPoint(Input.mousePosition).y < upLineGallery.transform.position.y && !tapImage)
+		if (Input.GetKeyDown(KeyCode.Mouse0) && Camera.main.ScreenToWorldPoint(Input.mousePosition).y < upLineGallery.transform.position.y && !tapImage)
 		{
 			posTap = Input.mousePosition;
+
 			//Debug.Log("tap");
 		}
-		if (Input.GetKeyUp(KeyCode.Mouse0) && !move && Camera.main.ScreenToWorldPoint(Input.mousePosition).y < upLineGallery.transform.position.y && !tapImage)
+		if (Input.GetKeyUp(KeyCode.Mouse0) && Camera.main.ScreenToWorldPoint(Input.mousePosition).y < upLineGallery.transform.position.y && !tapImage)
 		{
 			posTapUp = Input.mousePosition;
 			//Debug.Log("noTap");
 			if (posTap.y + Camera.main.pixelWidth / 10 < posTapUp.y)
 			{
-				direction = "up";
-				if(tabBar == "all")
+				
+				if (tabBar == "all" && !moveAll && loadAll == 0)
 				{
+					direction = "up";
 					MoveUpAll();
-					move = true;
-					checkMove = true;
+					moveAll = true;
+					//checkMove = true;
 				}
-				else if (tabBar == "odd")
+				else if (tabBar == "odd" && !moveOdd && loadOdd == 0)
 				{
+					direction = "up";
 					MoveUpOdd();
-					move = true;
-					checkMove = true;
+					moveOdd = true;
+					//checkMove = true;
 				}
-				else if(tabBar == "even")
+				else if (tabBar == "even" && !moveEven && loadEven == 0)
 				{
+					direction = "up";
 					MoveUpEven();
-					move = true;
-					checkMove = true;
+					moveEven = true;
+					//checkMove = true;
 				}
 			}
-			else if (posTap.y > posTapUp.y + Camera.main.pixelWidth / 10 && checkMove)
+			else if (posTap.y > posTapUp.y + Camera.main.pixelWidth / 10)
 			{
-				direction = "down";
-				if (tabBar == "all" && imagesAll[0].transform.localPosition.y > 270)
+				
+				if (tabBar == "all" && imagesAll[0].transform.localPosition.y > 270 && !moveAll && loadAll == 0)
 				{
+					direction = "down";
 					MoveDownAll();
-					move = true;
+					moveAll = true;
 				}
-				else if (tabBar == "odd" && imagesOdd[0].transform.localPosition.y > 270)
+				else if (tabBar == "odd" && imagesOdd[0].transform.localPosition.y > 270 && !moveOdd && loadOdd == 0)
 				{
+					direction = "down";
 					MoveDownOdd();
-					move = true;
+					moveOdd = true;
 				}
-				else if (tabBar == "even" && imagesEven[0].transform.localPosition.y > 270)
+				else if (tabBar == "even" && imagesEven[0].transform.localPosition.y > 270 && !moveEven && loadEven == 0)
 				{
+					direction = "down";
 					MoveDownEven();
-					move = true;
+					moveEven = true;
 				}
 			}
 			else if (Vector3.Distance(posTap, posTapUp) < 10)
@@ -679,13 +813,13 @@ public class LoadImage : MonoBehaviour
 			}
 		}
 
-
-		if(column == 2)
+		loadAll = column;
+		if (column == 2)
 		{
 			max++;
 			StartCoroutine(DownloadImagePosUp(imageUrl + max + ".jpg", galleryAll, imagesAll, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2, -2450, 0), max.ToString()));
 			max++;
-			StartCoroutine(DownloadImagePosUp(imageUrl + max + ".jpg", galleryAll, imagesAll, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 640, -2450, 0), max.ToString()));
+			StartCoroutine(DownloadImagePosUp(imageUrl + max + ".jpg", galleryAll, imagesAll, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 680, -2450, 0), max.ToString()));
 		}
 		if (column == 3)
 		{
@@ -729,12 +863,14 @@ public class LoadImage : MonoBehaviour
 
 		if (min > 2)
 		{
-			if(column == 2)
+			loadAll = column;
+
+			if (column == 2)
 			{
 				numberAll = min - 1;
 				StartCoroutine(DownloadImagePosDown(imageUrl + numberAll + ".jpg", galleryAll, imagesAll, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2, 1630, 0), numberAll.ToString()));
 				numberAll--;
-				StartCoroutine(DownloadImagePosDown(imageUrl + numberAll + ".jpg", galleryAll, imagesAll, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 640, 1630, 0), numberAll.ToString()));
+				StartCoroutine(DownloadImagePosDown(imageUrl + numberAll + ".jpg", galleryAll, imagesAll, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 680, 1630, 0), numberAll.ToString()));
 			}
 			if (column == 3)
 			{
@@ -825,12 +961,14 @@ public class LoadImage : MonoBehaviour
 			}
 		}
 
+		loadOdd = column;
+
 		if(column == 2)
 		{
 			max++;
 			StartCoroutine(DownloadImagePosUp(imageUrl + max + ".jpg", galleryOdd, imagesOdd, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2, -2450, 0), max.ToString()));
 			max++;
-			StartCoroutine(DownloadImagePosUp(imageUrl + max + ".jpg", galleryOdd, imagesOdd, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 640, -2450, 0), max.ToString()));
+			StartCoroutine(DownloadImagePosUp(imageUrl + max + ".jpg", galleryOdd, imagesOdd, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 680, -2450, 0), max.ToString()));
 		}
 		if (column == 3)
 		{
@@ -874,12 +1012,14 @@ public class LoadImage : MonoBehaviour
 
 		if (min > 2)
 		{
-			if(column == 2)
+			loadOdd = column;
+
+			if (column == 2)
 			{
 				numberOdd = min - 1;
 				StartCoroutine(DownloadImagePosDown(imageUrl + numberOdd + ".jpg", galleryOdd, imagesOdd, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2, 1630, 0), numberOdd.ToString()));
 				numberOdd--;
-				StartCoroutine(DownloadImagePosDown(imageUrl + numberOdd + ".jpg", galleryOdd, imagesOdd, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 640, 1630, 0), numberOdd.ToString()));
+				StartCoroutine(DownloadImagePosDown(imageUrl + numberOdd + ".jpg", galleryOdd, imagesOdd, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 680, 1630, 0), numberOdd.ToString()));
 			}
 			if (column == 3)
 			{
@@ -969,12 +1109,14 @@ public class LoadImage : MonoBehaviour
 			}
 		}
 
+		loadEven = column;
+
 		if(column == 2)
 		{
 			max++;
 			StartCoroutine(DownloadImagePosUp(imageUrl + max + ".jpg", galleryEven, imagesEven, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2, -2450, 0), max.ToString()));
 			max++;
-			StartCoroutine(DownloadImagePosUp(imageUrl + max + ".jpg", galleryEven, imagesEven, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 640, -2450, 0), max.ToString()));
+			StartCoroutine(DownloadImagePosUp(imageUrl + max + ".jpg", galleryEven, imagesEven, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 680, -2450, 0), max.ToString()));
 		}
 		if (column == 3)
 		{
@@ -1018,12 +1160,14 @@ public class LoadImage : MonoBehaviour
 
 		if (min > 2)
 		{
+			loadEven = column;
+
 			if(column == 2)
 			{
 				numberEven = min - 1;
 				StartCoroutine(DownloadImagePosDown(imageUrl + numberEven + ".jpg", galleryEven, imagesEven, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2, 1630, 0), numberEven.ToString()));
 				numberEven--;
-				StartCoroutine(DownloadImagePosDown(imageUrl + numberEven + ".jpg", galleryEven, imagesEven, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 640, 1630, 0), numberEven.ToString()));
+				StartCoroutine(DownloadImagePosDown(imageUrl + numberEven + ".jpg", galleryEven, imagesEven, new Vector3(0 - (column - 1) * 640 / 2 - (column - 1) * 40 / 2 + 680, 1630, 0), numberEven.ToString()));
 			}
 			if (column == 3)
 			{
@@ -1160,4 +1304,5 @@ public class LoadImage : MonoBehaviour
 	{
 		premiumPopup.transform.localPosition = Vector3.Lerp(new Vector3(0, 0, 0), new Vector3(0, -3500, 0), t);
 	}
+
 }
